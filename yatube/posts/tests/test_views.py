@@ -1,7 +1,7 @@
 import shutil
 import tempfile
 
-from posts.models import Post, Group, User, Follow
+from posts.models import Post, Group, User
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
