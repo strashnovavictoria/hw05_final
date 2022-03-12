@@ -111,21 +111,6 @@ class PostViewTests(TestCase):
                 self.assertEqual(post_group.slug, 'test-slug')
                 self.assertEqual(post_group.description, 'Тестовое описание')
 
-    def test_follow_unfollow(self):
-        """Проверка подписки на автора."""
-        response = self.authorized_client.get(reverse('posts:follow_index'))
-        self.assertEqual(len(response.context['page_obj']), 0)
-        Follow.objects.get_or_create(user=self.user, author=self.post.author)
-        resp2 = self.authorized_client.get(reverse('posts:follow_index'))
-        self.assertEqual(len(resp2.context['page_obj']), 1)
-        user_not = User.object.create(username='auth')
-        self.authorized_client.force_login(user_not)
-        resp2 = self.authorized_client.get(reverse('posts:follow_index'))
-        self.assertNotIn(self.post, resp2.context['page_obj'])
-        Follow.objects.all().delete()
-        resp3 = self.authorized_client.get(reverse('posts:follow_index'))
-        self.assertEqual(len(resp3.context['page_obj']), 0)
-
     def test_pages_show_image(self):
         """При создании картинка появляется на главной странице,
             на странице группы и автора"""
