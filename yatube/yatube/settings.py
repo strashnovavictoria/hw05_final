@@ -32,8 +32,6 @@ ALLOWED_HOSTS = [
     'testserver',
 ]
 
-CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
-# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -151,3 +149,5 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
     }
 }
+
+CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
