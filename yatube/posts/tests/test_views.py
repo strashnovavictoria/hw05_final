@@ -18,7 +18,6 @@ class PostViewTests(TestCase):
 
         cls.user = User.objects.create_user(username='auth')
 
-
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='test-slug',
@@ -126,7 +125,6 @@ class PostViewTests(TestCase):
         Follow.objects.all().delete()
         resp3 = self.authorized_client.get(reverse('posts:follow_index'))
         self.assertEqual(len(resp3.context['page_obj']), 0)
-
 
     def test_pages_show_image(self):
         """При создании картинка появляется на главной странице,
