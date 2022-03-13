@@ -106,3 +106,5 @@ class Follow(models.Model):
         on_delete=models.CASCADE,
         verbose_name='Aвтор'
     )
+    def __str__(self) -> str:
+        return self.author
