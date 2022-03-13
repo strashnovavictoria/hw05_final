@@ -97,10 +97,15 @@ class Follow(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=None,
-        related_name='follower'
+        related_name='follower',
+        verbose_name='Юзер'
     )
     author = models.ForeignKey(
         User,
         related_name='following',
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        verbose_name='Aвтор'
     )
+
+    def __str__(self) -> str:
+        return self.user

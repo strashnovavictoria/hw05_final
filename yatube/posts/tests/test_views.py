@@ -1,13 +1,12 @@
 import shutil
 import tempfile
 
-from posts.models import Post, Group, User
-from django.conf import settings
+from posts.models import Post, Group, User, Follow
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
+TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir='c:/Dev')
 
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
@@ -40,9 +39,8 @@ class PostViewTests(TestCase):
             author=cls.user,
             text='Текст для тестового поста',
             group=cls.group,
-            image=cls.uploaded
+            image=cls.uploaded,
         )
-
         cls.templates_page_names = {
             reverse('posts:index'):
                 'posts/index.html',
@@ -138,6 +136,16 @@ class PostViewTests(TestCase):
         response2 = self.authorized_client.get(reverse("posts:index"))
         resp2 = response2.content
         self.assertTrue(resp1 != resp2)
+
+    def test_follow_unfollow(self):
+        """Проверка подписки на автора."""
+        response_profile = self.authorized_client.get(reverse('posts:profile', kwargs={'username': self.user}))
+        self.assertIn('Подписаться', response_profile.content.decode())
+        self.assertNotIn('Отписаться', response_profile.content.decode())
+
+        res = self.authorized_client.post('posts:profile_follow', kwargs={'username': self.user}, follow=True)
+        is_follow = Follow.objects.filter(user=self.user).count()
+        self.assertEqual(is_follow, 0)
 
 
 class PaginatorViewsTest(TestCase):
