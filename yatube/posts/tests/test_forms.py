@@ -1,7 +1,7 @@
 import shutil
 import tempfile
 
-from posts.models import Post, Group, User, Comment
+from posts.models import Post, Group, User, Comment, Follow
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
@@ -106,3 +106,17 @@ class PostCreateFormTest(TestCase):
         self.assertRedirects(response,
                              f'/auth/login/?next=/posts/'
                              f'{self.post.id}/comment/')
+
+    def test_following(self):
+        """Проверяем,что создаётся подписка"""
+        Follow.objects.get_or_create(user=self.user, author=self.post.author)
+        form_data = {
+            'user': self.user,
+            'author': self.post.author,
+        }
+        response = self.authorized_client.post(
+            reverse('posts:follow_index'),
+            data=form_data,
+            follow=True
+        )
+        self.assertEqual(Follow.objects.count(), 1)

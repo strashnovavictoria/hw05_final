@@ -42,6 +42,10 @@ class PostViewTests(TestCase):
             group=cls.group,
             image=cls.uploaded,
         )
+        cls.follow = Follow.objects.get_or_create(
+            user=cls.user,
+            author=cls.post.author
+        )
         cls.templates_page_names = {
             reverse('posts:index'):
                 'posts/index.html',
@@ -140,12 +144,10 @@ class PostViewTests(TestCase):
 
     def test_follow_unfollow(self):
         """Проверка подписки на автора."""
-        adress = reverse('posts:profile', kwargs={'username': self.user})
-        response_profile = self.authorized_client.get(adress)
-        self.assertIn('Подписаться', response_profile.content.decode())
-        self.assertNotIn('Отписаться', response_profile.content.decode())
-        is_follow = Follow.objects.filter(user=self.user).count()
-        self.assertEqual(is_follow, 0)
+        Follow.objects.get_or_create(user=self.user, author=self.post.author)
+        self.assertEqual(Follow.objects.count(), 1)
+        Follow.objects.all().delete()
+        self.assertEqual(Follow.objects.count(), 0)
 
 
 class PaginatorViewsTest(TestCase):
