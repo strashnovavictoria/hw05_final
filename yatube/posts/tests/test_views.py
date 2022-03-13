@@ -40,11 +40,7 @@ class PostViewTests(TestCase):
             author=cls.user,
             text='Текст для тестового поста',
             group=cls.group,
-            image=cls.uploaded,
-        )
-        cls.follow = Follow.objects.get_or_create(
-            user=cls.user,
-            author=cls.post.author
+            image=cls.uploaded
         )
         cls.templates_page_names = {
             reverse('posts:index'):
@@ -142,7 +138,7 @@ class PostViewTests(TestCase):
         resp2 = response2.content
         self.assertTrue(resp1 != resp2)
 
-    def test_follow_unfollow(self):
+    def test_follow(self):
         """Проверка подписки на автора."""
         Follow.objects.get_or_create(user=self.user, author=self.post.author)
         self.assertEqual(Follow.objects.count(), 1)
