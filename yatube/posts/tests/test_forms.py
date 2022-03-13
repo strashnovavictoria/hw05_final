@@ -2,12 +2,13 @@ import shutil
 import tempfile
 
 from posts.models import Post, Group, User, Comment
+from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from http import HTTPStatus
 
-TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir='c:/Dev')
+TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
