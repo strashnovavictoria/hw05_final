@@ -14,6 +14,11 @@
           <a href="{% url 'posts:profile' post.author %}">
             все посты автора
           </a>
+          <a
+          class="btn btn-lg btn-light"
+          href="{% url 'posts:profile_unfollow' post.author %}" role="button">
+           Отписаться
+          </a>
         </li>       
         <li>
           Дата публикации: {{ post.pub_date|date:"d E Y" }}
@@ -33,4 +38,3 @@
   {% endfor %} 
 {% include 'posts/includes/paginator.html' %} 
 {% endblock %}
-

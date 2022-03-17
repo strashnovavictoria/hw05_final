@@ -7,6 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from http import HTTPStatus
+from posts.forms import PostForm
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
@@ -43,6 +44,7 @@ class PostCreateFormTest(TestCase):
             group=cls.group,
             image=cls.uploaded
         )
+        cls.form = PostForm()
 
     @classmethod
     def tearDownClass(cls):
@@ -67,10 +69,17 @@ class PostCreateFormTest(TestCase):
             data=form_data,
             follow=True
         )
+
         self.assertEqual(Post.objects.count(), posts_count)
         self.assertTrue(
             Post.objects.filter(
                 text='Текст для тестового поста'
+            ).exists()
+        )
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        self.assertTrue(
+            Post.objects.filter(
+                author=self.user
             ).exists()
         )
         self.assertEqual(response.status_code, HTTPStatus.OK)
@@ -79,7 +88,10 @@ class PostCreateFormTest(TestCase):
         """Проверяем,происходит изменение поста в базе данных, редирект."""
         old_post_text = PostCreateFormTest.post.text
         form_data = {
-            'text': 'new_text'
+            'text': 'new_text',
+            'group': PostCreateFormTest.group.id,
+            'author': self.user,
+            'image': self.uploaded
         }
         response = self.authorized_client.post(
             reverse('posts:post_edit', kwargs={'post_id': self.post.id}),

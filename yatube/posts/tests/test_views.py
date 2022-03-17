@@ -51,13 +51,6 @@ class PostViewTests(TestCase):
                 'posts/group_list.html'
         }
 
-        cls.templates_page_names_create = {
-            reverse('posts:post_create'):
-                'posts/post_create.html',
-            reverse('posts:post_edit', kwargs={'post_id': cls.post.id}):
-                'posts/post_edit.html'
-        }
-
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
@@ -102,10 +95,7 @@ class PostViewTests(TestCase):
                 response = self.authorized_client.get(reverse_name)
                 post_object = response.context['page_obj'][0]
                 post_group = post_object.group
-                # Проверка, что есть группа.
                 self.assertEqual(post_group, self.post.group)
-                # Проверка, что этот пост не попал в группу,
-                #  для которой не был предназначен.
                 self.assertEqual(post_object.group.title, 'Тестовая группа')
                 self.assertEqual(post_group.slug, 'test-slug')
                 self.assertEqual(post_group.description, 'Тестовое описание')
@@ -127,23 +117,6 @@ class PostViewTests(TestCase):
         post_object = response.context['post']
         post_image = post_object.image
         self.assertEqual(post_image, self.post.image)
-
-    def test_index_cached(self):
-        """Проверяем кэш."""
-        response = self.authorized_client.get(reverse("posts:index"))
-        resp1 = response.content
-        delete_post = Post.objects.get(id=1)
-        delete_post.delete()
-        response2 = self.authorized_client.get(reverse("posts:index"))
-        resp2 = response2.content
-        self.assertTrue(resp1 != resp2)
-
-    def test_follow(self):
-        """Проверка подписки на автора."""
-        Follow.objects.get_or_create(user=self.user, author=self.post.author)
-        self.assertEqual(Follow.objects.count(), 1)
-        Follow.objects.all().delete()
-        self.assertEqual(Follow.objects.count(), 0)
 
 
 class PaginatorViewsTest(TestCase):
@@ -173,3 +146,60 @@ class PaginatorViewsTest(TestCase):
         response = self.client.get(reverse('posts:index') + '?page=2')
         self.assertEqual(len(response.context['page_obj']),
                          self.page_contains_three)
+
+
+class CacheViewsTest(TestCase):
+    """Тест кэша."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='auth')
+        self.authorized_client = Client()
+
+        self.post = Post.objects.create(
+            author=self.user,
+            text='Текст для тестового поста',
+        )
+
+    def test_index_cache(self):
+        """Проверяем кэш на главной странице."""
+
+        response = self.authorized_client.get(reverse("posts:index"))
+        resp1 = response.content
+        delete_post = Post.objects.get(id=1)
+        delete_post.delete()
+        response2 = self.authorized_client.get(reverse("posts:index"))
+        resp2 = response2.content
+        self.assertTrue(resp1 != resp2)
+
+
+class FollowTest(TestCase):
+
+    def setUp(self):
+        self.user1 = User.objects.create_user(username='follower')
+        self.user2 = User.objects.create_user(username='author')
+        self.user3 = User.objects.create_user(username='guest')
+
+        self.authorized_client = Client()
+        self.guest_client = Client()
+
+        self.post = Post.objects.create(
+            author=self.user2,
+            text='Текст для тестового поста',
+        )
+
+    def test_follower(self):
+        """Проверка подписки."""
+
+        adress = reverse('posts:profile', kwargs={'username': self.user2})
+        response_profile = self.authorized_client.get(adress)
+        self.assertIn('Подписаться', response_profile.content.decode())
+        self.assertNotIn('Отписаться', response_profile.content.decode())
+
+        Follow.objects.get_or_create(user=self.user1, author=self.user2)
+        subscribe_follow = Follow.objects.filter(user=self.user1,
+                                                 author=self.user2)
+        self.assertEqual(subscribe_follow.count(), 1)
+
+        not_subscribe_follow = Follow.objects.filter(user=self.user3,
+                                                     author=self.user2)
+        self.assertEqual(not_subscribe_follow.count(), 0)

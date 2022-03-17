@@ -1,25 +1,41 @@
-from posts.models import Post, Comment
 from django import forms
+from .models import Post, Comment
 
 
 class PostForm(forms.ModelForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['group'].empty_label = "Группа не выбрана"
-        self.fields['group'].widget.attrs.update({'class': 'form-control'})
-        self.fields['text'].widget.attrs.update({'class': ' form-control'})
-
     class Meta:
+
         model = Post
-        fields = ('group', 'text', 'image')
+        fields = ('text', 'group', 'image')
+        labels = {
+            'text': 'Текст поста',
+            'group': 'Group',
+            'image': 'Картинка'
+        }
+        help_texts = {
+            'text': 'Текст нового поста',
+            'group': 'Группа, к которой будет относиться пост',
+            'image': 'Картинка к посту'
+        }
+
+    def clean_text(self):
+        data = self.cleaned_data['text']
+
+        if not data:
+            raise forms.ValidationError('поле Text не должно быть пустым')
+
+        return data
 
 
 class CommentForm(forms.ModelForm):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['text'].empty_label = "введите текст"
-        self.fields['text'].widget.attrs.update({'class': ' form-control'})
 
     class Meta:
         model = Comment
         fields = ('text',)
+
+    def clean_text(self):
+        data = self.cleaned_data['text']
+        if data == "":
+            raise forms.ValidationError(
+                'Вы обязательно должны заполнить поле!')
+        return data

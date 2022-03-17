@@ -58,7 +58,7 @@ class PostsURLTests(TestCase):
     def test_unexisting_page_url_exist(self):
         """Проверяем несуществующую страницу."""
         response = self.guest_client.get('/unexisting_page/')
-        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
+        self.assertEqual(response.status_code, 404)
         self.assertTemplateUsed(response, 'core/404.html')
 
     def test_authorized_client_can_post(self):
