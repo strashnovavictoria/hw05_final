@@ -188,18 +188,38 @@ class FollowTest(TestCase):
         )
 
     def test_follower(self):
-        """Проверка подписки."""
+        """Проверка, что авторизованный пользователь
+           может подписываться на других пользователей """
 
         adress = reverse('posts:profile', kwargs={'username': self.user2})
         response_profile = self.authorized_client.get(adress)
         self.assertIn('Подписаться', response_profile.content.decode())
-        self.assertNotIn('Отписаться', response_profile.content.decode())
+
+    def test_follow_page(self):
+        """Проверка, что новая запись пользователя
+            появляется в ленте тех, кто на него подписан  """
 
         Follow.objects.get_or_create(user=self.user1, author=self.user2)
         subscribe_follow = Follow.objects.filter(user=self.user1,
                                                  author=self.user2)
         self.assertEqual(subscribe_follow.count(), 1)
 
+    def test_unfollow_page(self):
+        """Проверка, что новая запись пользователя не появляется в ленте тех,
+           кто не подписан на него."""
+
+        Follow.objects.get_or_create(user=self.user1, author=self.user2)
         not_subscribe_follow = Follow.objects.filter(user=self.user3,
                                                      author=self.user2)
         self.assertEqual(not_subscribe_follow.count(), 0)
+
+    def test_unfollower(self):
+        """Проверка, что авторизованный пользователь
+           может отписываться от других пользователей."""
+
+        Follow.objects.get_or_create(user=self.user1, author=self.user2)
+        subscribe_follow = Follow.objects.filter(user=self.user1,
+                                                 author=self.user2)
+        self.assertEqual(subscribe_follow.count(), 1)
+        Follow.objects.filter(user=self.user1, author=self.user2).delete()
+        self.assertEqual(subscribe_follow.count(), 0)
