@@ -175,51 +175,69 @@ class CacheViewsTest(TestCase):
 class FollowTest(TestCase):
 
     def setUp(self):
-        self.user1 = User.objects.create_user(username='follower')
-        self.user2 = User.objects.create_user(username='author')
-        self.user3 = User.objects.create_user(username='guest')
-
-        self.authorized_client = Client()
-        self.guest_client = Client()
-
+        self.post_autor = User.objects.create(username='Author')
+        self.post_follower = User.objects.create(username='Follower')
         self.post = Post.objects.create(
-            author=self.user2,
-            text='Текст для тестового поста',
+            text='Текст для тестовой подписки',
+            author=self.post_autor,
         )
+        self.follower_client = Client()
+        self.follower_client.force_login(self.post_follower)
+        self.autor_client = Client()
+        self.autor_client.force_login(self.post_autor)
 
-    def test_follower(self):
+    def test_subscribe(self):
         """Проверка, что авторизованный пользователь
-           может подписываться на других пользователей """
+           может подписываться на других пользователей."""
 
-        adress = reverse('posts:profile', kwargs={'username': self.user2})
-        response_profile = self.authorized_client.get(adress)
-        self.assertIn('Подписаться', response_profile.content.decode())
+        follow_count = Follow.objects.count()
+        self.follower_client.post(
+            reverse(
+                'posts:profile_follow',
+                kwargs={'username': self.post_autor}
+            )
+        )
+        follow = Follow.objects.all().latest('id')
 
-    def test_follow_page(self):
-        """Проверка, что новая запись пользователя
-            появляется в ленте тех, кто на него подписан  """
+        self.assertEqual(Follow.objects.count(), follow_count + 1)
+        self.assertEqual(follow.author_id, self.post_autor.id)
+        self.assertEqual(follow.user_id, self.post_follower.id)
 
-        Follow.objects.get_or_create(user=self.user1, author=self.user2)
-        subscribe_follow = Follow.objects.filter(user=self.user1,
-                                                 author=self.user2)
-        self.assertEqual(subscribe_follow.count(), 1)
-
-    def test_unfollow_page(self):
-        """Проверка, что новая запись пользователя не появляется в ленте тех,
-           кто не подписан на него."""
-
-        Follow.objects.get_or_create(user=self.user1, author=self.user2)
-        not_subscribe_follow = Follow.objects.filter(user=self.user3,
-                                                     author=self.user2)
-        self.assertEqual(not_subscribe_follow.count(), 0)
-
-    def test_unfollower(self):
+    def test_unsubscribe(self):
         """Проверка, что авторизованный пользователь
            может отписываться от других пользователей."""
 
-        Follow.objects.get_or_create(user=self.user1, author=self.user2)
-        subscribe_follow = Follow.objects.filter(user=self.user1,
-                                                 author=self.user2)
-        self.assertEqual(subscribe_follow.count(), 1)
-        Follow.objects.filter(user=self.user1, author=self.user2).delete()
-        self.assertEqual(subscribe_follow.count(), 0)
+        Follow.objects.create(
+            user=self.post_follower,
+            author=self.post_autor
+        )
+        count_follow = Follow.objects.count()
+        self.follower_client.post(
+            reverse(
+                'posts:profile_unfollow',
+                kwargs={'username': self.post_autor}
+            )
+        )
+        self.assertEqual(Follow.objects.count(), count_follow - 1)
+
+    def test_unfollow(self):
+        """Проверка, что новая запись пользователя не появляется в ленте тех,
+           кто не подписан на него."""
+
+        response = self.autor_client.get(
+            reverse('posts:follow_index')
+        )
+        self.assertNotIn(self.post, response.context['page_obj'].object_list)
+
+    def test_follow(self):
+        """Проверка, что новая запись пользователя
+           появляется в ленте тех, кто на него подписан."""
+
+        Follow.objects.create(
+            user=self.post_follower,
+            author=self.post_autor
+        )
+        response = self.follower_client.get(
+            reverse('posts:follow_index')
+        )
+        self.assertIn(self.post, response.context['page_obj'].object_list)
